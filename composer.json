@@ -1,0 +1,7 @@
+{
+    "name": "offline/responsiveimages",
+    "description": "Adds srcset and sizes attributes to your <img> tags",
+    "require": {
+        "thesoftwarefanatics/php-html-parser": "^1.8"
+    }
+}

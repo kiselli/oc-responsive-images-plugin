@@ -4,6 +4,8 @@ namespace OFFLINE\ResponsiveImages\Classes;
 
 use Config;
 use OFFLINE\ResponsiveImages\Models\Settings;
+use PHPHtmlParser\Dom;
+
 
 /**
  * Manipulates images in a DOMDocument.
@@ -23,17 +25,22 @@ class DomManipulator
      * @param                   $html
      * @param \DOMDocument|null $dom
      */
-    public function __construct($html, \DOMDocument $dom = null)
+    public function __construct($html, Dom $dom = null)
     {
-        // suppress errors in case of invalid html
-        libxml_use_internal_errors(true);
 
         if ($dom === null) {
-            $this->dom = new \DOMDocument;
+            $this->dom = new Dom;
         }
 
-        $this->dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
-        $this->imgNodes = (new \DOMXPath($this->dom))->query("//img");
+        $dom->setOptions([
+            'cleanupInput' => false,
+            'removeScripts' => false,
+            'removeStyles' => false,
+            'preserveLineBreaks' => true
+        ]);
+
+        $this->dom->load(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+        $this->imgNodes = $this->dom->find("img");
     }
 
     /**
@@ -76,7 +83,7 @@ class DomManipulator
             $this->setClassAttribute($node);
         }
 
-        return $this->dom->saveHTML($this->dom);
+        return $this->dom->outerHtml;
     }
 
     /**
@@ -85,7 +92,7 @@ class DomManipulator
      * @param           $node
      * @param SourceSet $sourceSet
      */
-    protected function setSizesAttribute(\DOMElement $node, SourceSet $sourceSet)
+    protected function setSizesAttribute($node, SourceSet $sourceSet)
     {
         // Don't overwrite existing attributes
         if ($node->getAttribute('sizes') !== '') {
@@ -101,7 +108,7 @@ class DomManipulator
      * @param $node
      * @param $sourceSet
      */
-    protected function setSrcSetAttribute(\DOMElement $node, SourceSet $sourceSet)
+    protected function setSrcSetAttribute($node, SourceSet $sourceSet)
     {
         $targetAttribute = Settings::get('alternative_src_set', 'srcset');
         if ( ! $targetAttribute) {
@@ -121,7 +128,7 @@ class DomManipulator
      *
      * @param $node
      */
-    protected function setClassAttribute(\DOMElement $node)
+    protected function setClassAttribute($node)
     {
         if ( ! $class = Settings::get('add_class')) {
             return;
